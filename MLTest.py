@@ -91,14 +91,14 @@ shap_values = explainer(x)
 shap.summary_plot(shap_values, x, plot_type="bar", max_display=20, show=False)
 axes[idx + 1].imshow(plt.gcf().canvas.buffer_rgba())
 axes[idx + 1].axis('off')
-axes[idx + 1].set_title("XGBoost SHAP\nTop 20 Feature Importance (Bar)")
+axes[idx + 1].set_title("Random Tree SHAP\nTop 20 Feature Importance (Bar)")
 
 # Plot summary graph
 plt.clf()
 shap.summary_plot(shap_values, x, max_display=20, show=False)
 axes[idx + 2].imshow(plt.gcf().canvas.buffer_rgba())
 axes[idx + 2].axis('off')
-axes[idx + 2].set_title("XGBoost SHAP\nTop 20 Feature Impact (Scatter)")
+axes[idx + 2].set_title("Random Tree SHAP\nTop 20 Feature Impact (Scatter)")
 
 # Adjustment
 for j in range(idx + 3, len(axes)):
