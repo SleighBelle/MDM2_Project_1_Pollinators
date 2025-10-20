@@ -17,4 +17,6 @@ This uses 4 types of ML model to return the weight (Importance) of different fea
 Using SHAP Value analysis to show the influence of features affect the pollination.
 
 ## Location file
-This visualise the location of the pollination bewteen bee and plants (flower_visted). Different color of dot stands for various types of bee while the size of it means the amount of plants has interactio with. Problem Remained: UK map is unable to plot under the 2D dot graph.
+This visualise the location of the pollination bewteen bee and plants (flower_visted). Different color of dot stands for various types of bee while the size of it means the amount of plants has interactio with. 
+
+Problem Remained: UK map is unable to plot under the 2D dot graph.
