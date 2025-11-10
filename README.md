@@ -2,7 +2,7 @@
 
 ## Data_cleaner and Importances files
 
-These intake data from the first link on the google doc that hongze uploaded.
+These intake data from the first link on the google doc that hongze uploaded, uploaded on github as "interactions.csv".
 
 They will work together to return the weighting (significace) of the impact of indervidual features on the number of interactions between a **specific** pollinator and plants.
 
