@@ -33,14 +33,14 @@ for _, row in df.iterrows():
     # Right Node Name 
     score_node = f"R={score}"
 
-    # 左右两侧节点
+    # Nodes on Two Sides
     B.add_node(Start, bipartite=0)   # left
     B.add_node(score_node, bipartite=1)   # right
 
-    # 边上加权重属性 weight
+    # Adding weight on Edges
     B.add_edge(Start, score_node, weight=float(score))
 
-# 按 bipartite 属性拆分左右节点
+# Dividing Nodes by bipartite 
 left_nodes  = [n for n, d in B.nodes(data=True) if d["bipartite"] == 0]
 right_nodes = [n for n, d in B.nodes(data=True) if d["bipartite"] == 1]
 
