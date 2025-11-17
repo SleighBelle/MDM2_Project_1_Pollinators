@@ -53,90 +53,75 @@ def print_shap_pct(shap_values, x):
 
 
 def get_pair_interaction_weight(
-    shap_values,         # ### NEW: Pass 2D main SHAP values ###
-    shap_interactions,   # 3D interaction SHAP values
-    x,                   # x_shap (features)
-    y,                   # ### NEW: Pass y_shap (target) ###
-    pollinator_name, 
+    shap_values_2d,
+    # shap_interactions_3d,   # UNUSED – commented out
+    x,
+    y,
+    pollinator_name,
     plant_name
 ):
-    """
-    Returns a dict with SHAP stats for a specific pollinator–plant pair.
-    
-    Includes:
-    1. Network Strength (mean_abs_interaction)
-    2. Temp Susceptibility (temp_susceptibility_total)
-    3. Directional SHAP effects (mean_directional_shap_...)
-    4. Baseline Count (mean_total_count_for_pair)
-    """
     cols = x.columns.tolist()
-    
-    # --- Get feature columns and indices ---
-    pollinator_cols = [c for c in cols if 'latin' in c and pollinator_name in c]
-    plant_cols      = [c for c in cols if 'flower_visited' in c and plant_name in c]
-    
-    # Get numeric feature columns
-    temp_cols   = [c for c in cols if c == 'temperature']
-    wind_cols   = [c for c in cols if c == 'wind_speed']
-    sun_cols    = [c for c in cols if c == 'sunshine']
-    
-    # Check if all required features are present
+
+    # Identify the OHE columns for the pollinator and plant
+    pollinator_cols = [c for c in cols if ("latin_" in c) and (pollinator_name in c)]
+    plant_cols      = [c for c in cols if ("flower_visited_" in c) and (plant_name in c)]
+
+    # Environmental feature columns
+    temp_cols = [c for c in cols if c == "temperature"]
+    wind_cols = [c for c in cols if c == "wind_speed"]
+    sun_cols  = [c for c in cols if c == "sunshine"]
+
     if not all([pollinator_cols, plant_cols, temp_cols, wind_cols, sun_cols]):
-        return None # Missing one of the key features
-    
+        return None
+
     poll_col = pollinator_cols[0]
     plant_col = plant_cols[0]
     temp_col = temp_cols[0]
     wind_col = wind_cols[0]
-    sun_col = sun_cols[0]
-    
-    # Get indices for all features
-    i = cols.index(poll_col)
-    j = cols.index(plant_col)
-    k_temp = cols.index(temp_col)
-    k_wind = cols.index(wind_col)
-    k_sun = cols.index(sun_col)
-    
-    # --- Create mask for this pair ---
+    sun_col  = sun_cols[0]
+
+    # mask for rows representing this plant–pollinator interaction
     mask = (x[poll_col] == 1) & (x[plant_col] == 1)
     if mask.sum() == 0:
         return None
-    
-    # --- 1. Network Strength (from 3D interactions) ---
-    pair_int_values = shap_interactions[mask][:, i, j]
-    mean_abs_int = np.mean(np.abs(pair_int_values))
 
-    # --- 2. Environmental Robustness (from 3D interactions) ---
-    pol_temp_interactions = shap_interactions[mask][:, i, k_temp]
-    plant_temp_interactions = shap_interactions[mask][:, j, k_temp]
-    temp_susceptibility = np.mean(np.abs(pol_temp_interactions)) + np.mean(np.abs(plant_temp_interactions))
-    
-    # --- 3. NEW: Directional SHAP Effects (from 2D values) ---
-    # This is the (Mean Directional SHAP) part of your formula
-    shap_values_masked = shap_values[mask]
-    
-    mean_directional_shap_temp = shap_values_masked[:, k_temp].mean()
-    mean_directional_shap_wind = shap_values_masked[:, k_wind].mean()
-    mean_directional_shap_sun  = shap_values_masked[:, k_sun].mean()
-    
-    # --- 4. NEW: Baseline TotalCount (from y) ---
-    # This is the (Baseline_TotalCount) part of your formula
+    # 2D SHAP values (main effects)
+    shap_values_masked = shap_values_2d[mask]
+
+    # Mean directional SHAP values (2D only)
+    mean_directional_shap_temp = shap_values_masked[:, x.columns.get_loc(temp_col)].mean()
+    mean_directional_shap_wind = shap_values_masked[:, x.columns.get_loc(wind_col)].mean()
+    mean_directional_shap_sun  = shap_values_masked[:, x.columns.get_loc(sun_col)].mean()
+
+    # Mean interaction count
     mean_total_count = y.loc[mask].mean()
-    
+
+    # ----------------------------------------------------------------------
+    # 3D SHAP interaction values – UNUSED (commented out)
+    #
+    # pair_int_values = shap_interactions_3d[mask][:, i, j]
+    # mean_abs_interaction = np.mean(np.abs(pair_int_values))
+    #
+    # climate interactions:
+    # pol_temp_interactions   = shap_interactions_3d[mask][:, i, k_temp]
+    # plant_temp_interactions = shap_interactions_3d[mask][:, j, k_temp]
+    # temp_susceptibility_total = (
+    #     np.mean(np.abs(pol_temp_interactions)) 
+    #     + np.mean(np.abs(plant_temp_interactions))
+    # )
+    # ----------------------------------------------------------------------
+
     return {
-        'pollinator_name': pollinator_name,
-        'plant_name': plant_name,
-        'n_rows_for_pair': int(mask.sum()),
-        
-        # Original metrics
-        'mean_abs_interaction': mean_abs_int, 
-        'temp_susceptibility_total': temp_susceptibility,
-        
-        # --- NEW OUTPUT COLUMNS ---
-        'mean_total_count_for_pair': mean_total_count,
-        'mean_directional_shap_temp': mean_directional_shap_temp,
-        'mean_directional_shap_wind': mean_directional_shap_wind,
-        'mean_directional_shap_sun': mean_directional_shap_sun
+        "pollinator_name": pollinator_name,
+        "plant_name": plant_name,
+        "n_rows_for_pair": int(mask.sum()),
+        "mean_directional_shap_temp": mean_directional_shap_temp,
+        "mean_directional_shap_wind": mean_directional_shap_wind,
+        "mean_directional_shap_sun":  mean_directional_shap_sun,
+        "mean_total_count_for_pair": float(mean_total_count),
+
+        # "mean_abs_interaction": mean_abs_interaction,   # UNUSED
+        # "temp_susceptibility_total": temp_susceptibility_total,  # UNUSED
     }
 
 
