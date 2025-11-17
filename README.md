@@ -22,4 +22,6 @@ This visualise the location of the pollination bewteen bee and plants (flower_vi
 Problem Remained: UK map is unable to plot under the 2D dot graph.
 
 ## Bipartite file 
-This file could plot any bipartite graph. The CSV file and Columns name could be easily changed as needed. 
+This file could plot any weighted bipartite graph and related bar chart. The CSV file and Columns name could be easily changed as needed. 
+Note: The size of the graph is (20,10) instead of (10,5) for clearer visualization. 
+
