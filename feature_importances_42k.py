@@ -62,65 +62,66 @@ explainer = shap.TreeExplainer(
     feature_perturbation = "tree_path_dependent" # This is a chat GPT line. if it's not here I get a "warning" msg
 )
 
-'''
-2D shap values - this will give us the extent to which each pair - pollinator 
-pair is effected by changes in specific features at a time, e.g. Temprature,
-or Wind-Speed or Sucshine.
-'''
-print("⏱️ Computing 2D SHAP values (main effects) on subsample...\n")
-t0 = time.time()
-shap_values_2d = explainer.shap_values(x)
-t1 = time.time()
-print("Elapsed for shap_values:", t1 - t0, "seconds\n")
+# ----------------------------------------------------------------------------
+'''                                                                           |
+2D shap values - this will give us the extent to which each pair - pollinator | 
+pair is effected by changes in specific features at a time, e.g. Temprature,  |
+or Wind-Speed or Sucshine.                                                    |
+''' #                                                                         |
+print("⏱️ Computing 2D SHAP values (main effects)...\n") #                    |
+t0 = time.time() #                                                            |
+shap_values_2d = explainer.shap_values(x) #                                   |
+t1 = time.time() #                                                            |
+print("Elapsed:", t1 - t0, "seconds\n") #                                     |
+# ----------------------------------------------------------------------------
 
-
-'''
-3D Shap values - This is the average of the value of all possible values of
-
-'''
-print("⏱️ Computing 3D SHAP interaction values on subsample...\n")
-t0 = time.time()
-shap_interactions_3d = explainer.shap_interaction_values(x)
-t1 = time.time()
-print("Elapsed for shap_interactions:", t1 - t0, "seconds\n")
+# ----------------------------------------------------------------------
+# 3D SHAP REMOVED – we arent using these anymore - keep them here for the "improvment" section of report
+#
+# print("⏱️ Computing 3D SHAP interaction values...\n")
+# t0 = time.time()
+# shap_interactions_3d = explainer.shap_interaction_values(x)
+# t1 = time.time()
+# print("Elapsed:", t1 - t0, "seconds\n")
+# ----------------------------------------------------------------------
 
 df_agg_shap = df_agg.loc[x.index].copy()
 
 all_pair_stats = []
-
 print("⏱️ Computing relationship strengths for top plants...\n")
 
 for plant in popular_plant_list:
     mask_plant = df_agg_shap['flower_visited'] == plant
     pollinators_for_plant = df_agg_shap.loc[mask_plant, 'latin'].unique()
-    
+
     for pol in pollinators_for_plant:
         stats = get_pair_interaction_weight(
             shap_values_2d,
-            shap_interactions_3d,
+            # shap_interactions_3d,   # from the last draft. Unused.
             x,
             y,
             pol,
             plant
         )
-        
         if stats is None:
             continue
-        
+
         all_pair_stats.append(stats)
 
 pair_strengths = pd.DataFrame(all_pair_stats)
 
+# --- PFIS / Robustness ------------------------------------------------
+# --- PFIS --> Per Feature Importance Score ----------------------------
+
 delta_C = {
-    'temp': 2.0,   # +2°C by 2040s (UKCP18)
-    'wind': 0.0,   # no change
-    'sun':  0.056   # +12% hot-day chance on 1-5 sunshine scale → 0.12 * 4
+    'temp': 2.0,
+    'wind': 0.0,
+    'sun': 0.056
 }
 
-# PFIS = Per Feature Importance Sore, this is ** NOT ** robustness
 print("\n📝 Calculating per-feature PFIS and overall robustness...")
 
-total_count = pair_strengths['mean_total_count_for_pair'] + 1e-6  # avoid deviding by 0
+total_count = pair_strengths['mean_total_count_for_pair'] + 1e-6
 
 pair_strengths['PFIS_temp'] = (
     delta_C['temp'] * pair_strengths['mean_directional_shap_temp'] / total_count
@@ -141,11 +142,22 @@ pair_strengths['total_vulnerability'] = (
 pair_strengths['robustness_score'] = 1.0 / (pair_strengths['total_vulnerability'] + 1e-6)
 
 pair_strengths = pair_strengths.sort_values(
-    by='robustness_score',
-    ascending=False
-).reset_index(drop=True)
+    by = 'robustness_score',
+    ascending = False
+).reset_index(drop = True)
+
+pair_strengths.drop([ # ---------------------------------------- Were just dropping all the columns we dont need so 
+    'n_rows_for_pair', 'mean_directional_shap_temp', # --------- that its easier for Hongze to interperate the csv file.
+    'mean_directional_shap_wind', 'mean_directional_shap_sun', 
+    'mean_total_count_for_pair', 'total_vulnerability'
+    ])
 
 pair_strengths.to_csv('MDM2/outputs/strengths.csv', index = False)
+
+print(f'\n💪 All pair_strengths uploaded to strengths.csv.')
+
+# columns = pair_strengths.columns
+# print(columns)
 
 # import pandas as pd
 # import numpy as np
