@@ -17,8 +17,8 @@ if not required_cols.issubset(df.columns):
 # Bip Graph
 B = nx.Graph()
 
-# Left: Pollinator_name
-# Right：robustness_score
+# Left: Col_A
+# Right：Col_B
 for _, row in df.iterrows():
     pollinator = row[Col_A]
     score = row[Col_B]
