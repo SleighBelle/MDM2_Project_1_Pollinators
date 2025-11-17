@@ -17,7 +17,7 @@ df = pd.read_csv(path, encoding='latin-1', header=0)
 for c in ['TotalCount', 'temperature', 'wind_speed', 'sunshine']:
     df[c] = pd.to_numeric(df[c], errors = 'coerce')
 
-df['sin_week'] = model_seasonal_cycles(df)
+df[['sin_week', 'cos_week']] = model_seasonal_cycles(df)
 
 popular_plant_list = identify_upper_lower(df)
 print(f'Top plants: {popular_plant_list}')
@@ -37,11 +37,12 @@ agg_functions = {
     'wind_speed': 'mean',
     'sunshine': 'mean',
     'Year': 'first',
-    'sin_week': 'first'
+    'sin_week': 'first',
+    'cos_week': 'first'
 }
 df_agg = df_top.groupby(['latin', 'flower_visited', 'Week']).agg(agg_functions).reset_index()
 
-features = ['sunshine', 'wind_speed', 'temperature', 'sin_week', 'latin', 'flower_visited']
+features = ['sunshine', 'wind_speed', 'temperature', 'sin_week', 'cos_week', 'latin', 'flower_visited']
 
 x_raw = df_agg[features]
 y = df_agg['TotalCount']
@@ -49,31 +50,22 @@ y = df_agg['TotalCount']
 x = ohe(x_raw)
 y = y.loc[x.index]
 
-model = RandomForestRegressor(n_estimators = 100, random_state = 0)
+model = RandomForestRegressor(n_estimators=500, random_state=0)
 model.fit(x, y)
-
-# print(len(x))
-
-# We can use the line below for any models that are too big
-#x_shap = shap.sample(x, 1000, random_state=0)
 
 explainer = shap.TreeExplainer(
     model,
-    feature_perturbation = "tree_path_dependent" # This is a chat GPT line. if it's not here I get a "warning" msg
+    feature_perturbation="tree_path_dependent"
 )
 
-# ----------------------------------------------------------------------------
-'''                                                                           |
-2D shap values - this will give us the extent to which each pair - pollinator | 
-pair is effected by changes in specific features at a time, e.g. Temprature,  |
-or Wind-Speed or Sucshine.                                                    |
-''' #                                                                         |
-print("⏱️ Computing 2D SHAP values (main effects)...\n") #                    |
-t0 = time.time() #                                                            |
-shap_values_2d = explainer.shap_values(x) #                                   |
-t1 = time.time() #                                                            |
-print("Elapsed:", t1 - t0, "seconds\n") #                                     |
-# ----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
+# 2D SHAP values                                                          |
+print("⏱️ Computing 2D SHAP values (main effects)...\n") #                |
+t0 = time.time() #                                                        |
+shap_values_2d = explainer.shap_values(x) #                               |
+t1 = time.time() #                                                        |
+print("Elapsed:", t1 - t0, "seconds\n") #                                 |
+# ------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
 # 3D SHAP REMOVED – we arent using these anymore - keep them here for the "improvment" section of report
