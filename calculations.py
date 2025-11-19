@@ -57,3 +57,18 @@ msg_3 = f'The total number of interactions of the top 10 plants are {top_10_num}
 print('\n', msg_1)
 print('\n', msg_2)
 print('\n', msg_3)
+
+top_20_rows = sorted_df.head(100)
+
+plt.figure(figsize = (30, 8)) 
+plt.bar(top_20_rows['flower_visited'], top_20_rows['TotalCount'], color = 'skyblue', edgecolor = 'black', width = 0.8)
+
+plt.xlabel('Plant Name', fontsize = 12)
+plt.ylabel('Total Interactions', fontsize = 12)
+plt.title('Top 20 Most Visited Plants', fontsize = 14)
+
+x = range(len(top_20_rows))
+plt.xticks(rotation = 90)
+
+plt.tight_layout() 
+plt.show()
